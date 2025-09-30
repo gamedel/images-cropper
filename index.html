@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Обрезка PNG и сохранение в JPG</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="page-header">
+      <h1>Обрезка PNG и экспорт в JPG</h1>
+      <p class="lead">
+        Загрузите изображения с белым фоном, настройте рамку обрезки и сохраните их в формате JPG с нужным именованием.
+      </p>
+    </header>
+
+    <section class="controls" aria-label="Настройки">
+      <div class="control-group">
+        <label class="file-label" for="fileInput">Выберите изображения</label>
+        <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/*" multiple />
+      </div>
+
+      <div class="control-row">
+        <label>
+          Максимальная сторона (px)
+          <input id="maxDimension" type="number" min="50" max="4000" value="500" />
+        </label>
+        <label>
+          Имя файлов
+          <input id="baseName" type="text" value="card" placeholder="Например, card" />
+        </label>
+        <label>
+          Номер для начала
+          <input id="startIndex" type="number" min="0" value="1" />
+        </label>
+      </div>
+
+      <button id="downloadAll" type="button" disabled>Скачать все JPG</button>
+    </section>
+
+    <section id="imagesContainer" class="images" aria-live="polite"></section>
+  </main>
+
+  <template id="imageTemplate">
+    <article class="image-card">
+      <header class="image-card__header">
+        <div>
+          <h2 class="image-card__title"></h2>
+          <p class="image-card__subtitle"></p>
+        </div>
+        <button type="button" class="remove-btn" title="Удалить изображение">×</button>
+      </header>
+
+      <canvas class="preview" width="240" height="180" aria-label="Предпросмотр обрезки"></canvas>
+      <p class="preview-size"></p>
+
+      <div class="mode-switch">
+        <label>
+          <input type="checkbox" class="manual-toggle" />
+          Ручная настройка обрезки
+        </label>
+        <button type="button" class="reset-auto">Автообрезка</button>
+      </div>
+
+      <div class="sliders" hidden>
+        <div class="slider">
+          <label>Сверху: <span class="value value-top"></span> px</label>
+          <input type="range" class="slider-top" min="0" value="0" />
+        </div>
+        <div class="slider">
+          <label>Снизу: <span class="value value-bottom"></span> px</label>
+          <input type="range" class="slider-bottom" min="0" value="0" />
+        </div>
+        <div class="slider">
+          <label>Слева: <span class="value value-left"></span> px</label>
+          <input type="range" class="slider-left" min="0" value="0" />
+        </div>
+        <div class="slider">
+          <label>Справа: <span class="value value-right"></span> px</label>
+          <input type="range" class="slider-right" min="0" value="0" />
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

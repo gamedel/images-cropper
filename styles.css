@@ -1,0 +1,261 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+  --accent: #3f8cff;
+  --accent-dark: #1f6bdb;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --bg-muted: rgba(63, 140, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #f6f7fb;
+  color: #1c1c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #10131a;
+    color: #f1f3f9;
+  }
+
+  .image-card,
+  .controls {
+    background: rgba(22, 25, 35, 0.75);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.container {
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 3vw, 2.5rem) 3rem;
+  max-width: 1024px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 4vw, 2.4rem);
+}
+
+.lead {
+  margin: 0.5rem 0 0;
+  max-width: 60ch;
+  color: rgba(28, 28, 28, 0.75);
+}
+
+@media (prefers-color-scheme: dark) {
+  .lead {
+    color: rgba(241, 243, 249, 0.7);
+  }
+}
+
+.controls {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: flex-end;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.control-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+input[type="file"] {
+  border: 1px dashed var(--border-color);
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(63, 140, 255, 0.04);
+  color: inherit;
+}
+
+input[type="number"],
+input[type="text"] {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: inherit;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+button:disabled {
+  background: rgba(0, 0, 0, 0.2);
+  cursor: not-allowed;
+}
+
+button:not(:disabled):hover,
+button:not(:disabled):focus-visible {
+  background: var(--accent-dark);
+}
+
+#downloadAll {
+  margin-left: auto;
+}
+
+.images {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.image-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.image-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.image-card__title {
+  margin: 0;
+  font-size: 1.05rem;
+  word-break: break-word;
+}
+
+.image-card__subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(28, 28, 28, 0.65);
+}
+
+.remove-btn {
+  background: rgba(255, 71, 87, 0.16);
+  color: #ff4757;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.remove-btn:hover,
+.remove-btn:focus-visible {
+  background: rgba(255, 71, 87, 0.28);
+}
+
+.preview {
+  width: 100%;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  display: block;
+}
+
+.preview-size {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(28, 28, 28, 0.7);
+}
+
+.mode-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mode-switch label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.mode-switch input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.reset-auto {
+  background: rgba(63, 140, 255, 0.16);
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.reset-auto:hover,
+.reset-auto:focus-visible {
+  background: rgba(63, 140, 255, 0.28);
+}
+
+.sliders {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.slider label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #downloadAll {
+    margin-left: 0;
+  }
+
+  .mode-switch {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
