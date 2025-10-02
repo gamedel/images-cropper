@@ -7,8 +7,9 @@ const imagesContainer = document.getElementById('imagesContainer');
 const imageTemplate = document.getElementById('imageTemplate');
 
 const MIN_CROP_PIXELS = 1;
-const WHITE_THRESHOLD = 238;
-const WHITE_ROW_TOLERANCE = 0.9;
+const WHITE_THRESHOLD = 248;
+const WHITE_ROW_TOLERANCE = 0.97;
+const DOWNLOAD_DELAY_MS = 180;
 
 const state = {
   items: [],
@@ -80,7 +81,14 @@ function detectAutoOffsets(image) {
     const r = data[index];
     const g = data[index + 1];
     const b = data[index + 2];
-    return r >= whiteThreshold && g >= whiteThreshold && b >= whiteThreshold;
+    const minChannel = Math.min(r, g, b);
+    const maxChannel = Math.max(r, g, b);
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return (
+      minChannel >= whiteThreshold - 5 &&
+      maxChannel >= whiteThreshold &&
+      luminance >= whiteThreshold - 3
+    );
   };
 
   const rowIsWhite = (y) => {
@@ -390,7 +398,14 @@ async function handleDownloadAll() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      const href = link.href;
+      setTimeout(() => URL.revokeObjectURL(href), 2000);
+      if (DOWNLOAD_DELAY_MS > 0) {
+        // Небольшая пауза помогает браузеру обработать последовательные загрузки
+        // и избежать пропуска части файлов в больших партиях.
+        // eslint-disable-next-line no-await-in-loop
+        await delay(DOWNLOAD_DELAY_MS);
+      }
       index += 1;
     }
   } catch (error) {
@@ -456,4 +471,10 @@ function exportImage(item, maxDimension) {
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
