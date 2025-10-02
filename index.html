@@ -36,6 +36,18 @@
         </label>
       </div>
 
+      <div class="control-row">
+        <label>
+          Порог белого (0-255)
+          <input id="whiteThreshold" type="number" min="200" max="254" value="252" step="1" />
+          <span class="control-hint">Регулируйте, чтобы сильнее или слабее обрезать светлый фон.</span>
+        </label>
+        <label class="checkbox-label">
+          <input id="matchFirstCrop" type="checkbox" />
+          Обрезать по первому изображению
+        </label>
+      </div>
+
       <button id="downloadAll" type="button" disabled>Скачать все JPG</button>
     </section>
 
