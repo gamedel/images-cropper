@@ -7,6 +7,8 @@ const imagesContainer = document.getElementById('imagesContainer');
 const imageTemplate = document.getElementById('imageTemplate');
 
 const MIN_CROP_PIXELS = 1;
+const WHITE_THRESHOLD = 238;
+const WHITE_ROW_TOLERANCE = 0.9;
 
 const state = {
   items: [],
@@ -68,8 +70,8 @@ function detectAutoOffsets(image) {
   ctx.drawImage(image, 0, 0);
   const { data } = ctx.getImageData(0, 0, width, height);
 
-  const whiteThreshold = 245;
-  const tolerance = 0.97;
+  const whiteThreshold = WHITE_THRESHOLD;
+  const tolerance = WHITE_ROW_TOLERANCE;
   const sampleX = Math.max(1, Math.floor(width / 600));
   const sampleY = Math.max(1, Math.floor(height / 600));
 
@@ -371,8 +373,16 @@ async function handleDownloadAll() {
   const originalText = downloadButton.textContent;
   downloadButton.textContent = 'Сохранение…';
 
+  const itemsForDownload = [...state.items].sort((a, b) => {
+    const timeDiff = (a.file.lastModified || 0) - (b.file.lastModified || 0);
+    if (timeDiff !== 0) {
+      return timeDiff;
+    }
+    return a.file.name.localeCompare(b.file.name);
+  });
+
   try {
-    for (const item of state.items) {
+    for (const item of itemsForDownload) {
       const blob = await exportImage(item, maxDimension);
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
