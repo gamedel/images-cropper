@@ -6,6 +6,8 @@
   --accent-dark: #1f6bdb;
   --border-color: rgba(0, 0, 0, 0.1);
   --bg-muted: rgba(63, 140, 255, 0.08);
+  --preview-border: rgba(0, 0, 0, 0.85);
+  --preview-bg: #fff;
 }
 
 * {
@@ -29,6 +31,11 @@ body {
   .controls {
     background: rgba(22, 25, 35, 0.75);
     border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  :root {
+    --preview-border: rgba(255, 255, 255, 0.85);
+    --preview-bg: rgba(10, 14, 22, 0.85);
   }
 }
 
@@ -208,8 +215,9 @@ button:not(:disabled):focus-visible {
 
 .preview {
   width: 100%;
-  border-radius: 12px;
-  background: var(--bg-muted);
+  border-radius: 0;
+  background: var(--preview-bg);
+  border: 2px solid var(--preview-border);
   display: block;
 }
 
