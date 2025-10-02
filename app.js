@@ -5,14 +5,27 @@ const startIndexInput = document.getElementById('startIndex');
 const downloadButton = document.getElementById('downloadAll');
 const imagesContainer = document.getElementById('imagesContainer');
 const imageTemplate = document.getElementById('imageTemplate');
+const thresholdInput = document.getElementById('whiteThreshold');
+const matchFirstCropCheckbox = document.getElementById('matchFirstCrop');
 
 const MIN_CROP_PIXELS = 1;
-const WHITE_THRESHOLD = 238;
-const WHITE_ROW_TOLERANCE = 0.9;
+const DEFAULT_WHITE_THRESHOLD = 252;
+const WHITE_THRESHOLD_MIN = 200;
+const WHITE_THRESHOLD_MAX = 254;
+const WHITE_ROW_TOLERANCE = 0.995;
+const DOWNLOAD_DELAY_MS = 180;
 
 const state = {
   items: [],
+  whiteThreshold: DEFAULT_WHITE_THRESHOLD,
+  applyFirstCrop: false,
 };
+
+if (thresholdInput) {
+  const initial = sanitizeWhiteThreshold(thresholdInput.value);
+  state.whiteThreshold = initial;
+  thresholdInput.value = String(initial);
+}
 
 fileInput.addEventListener('change', (event) => {
   const files = Array.from(event.target.files || []);
@@ -26,6 +39,34 @@ fileInput.addEventListener('change', (event) => {
 });
 
 downloadButton.addEventListener('click', handleDownloadAll);
+
+if (thresholdInput) {
+  const handle = () => {
+    const newValue = sanitizeWhiteThreshold(thresholdInput.value);
+    state.whiteThreshold = newValue;
+    thresholdInput.value = String(newValue);
+    recomputeAutoOffsets();
+  };
+  thresholdInput.addEventListener('input', handle);
+  thresholdInput.addEventListener('change', handle);
+}
+
+if (matchFirstCropCheckbox) {
+  matchFirstCropCheckbox.addEventListener('change', () => {
+    state.applyFirstCrop = matchFirstCropCheckbox.checked;
+    if (state.applyFirstCrop) {
+      applyReferenceCrop();
+    } else {
+      state.items.forEach((item) => {
+        if (!item.isManual) {
+          item.offsets = { ...item.autoOffsets };
+        }
+        updateSliderUI(item);
+        updatePreview(item);
+      });
+    }
+  });
+}
 
 function loadImageFile(file) {
   const reader = new FileReader();
@@ -48,6 +89,10 @@ function loadImageFile(file) {
       state.items.push(item);
       updateDownloadButtonState();
       updatePreview(item);
+
+      if (state.applyFirstCrop) {
+        applyReferenceCrop();
+      }
     };
     img.onerror = () => {
       console.error('Не удалось прочитать изображение:', file.name);
@@ -60,7 +105,7 @@ function loadImageFile(file) {
   reader.readAsDataURL(file);
 }
 
-function detectAutoOffsets(image) {
+function detectAutoOffsets(image, thresholdOverride = state.whiteThreshold) {
   const width = image.naturalWidth;
   const height = image.naturalHeight;
   const canvas = document.createElement('canvas');
@@ -70,7 +115,12 @@ function detectAutoOffsets(image) {
   ctx.drawImage(image, 0, 0);
   const { data } = ctx.getImageData(0, 0, width, height);
 
-  const whiteThreshold = WHITE_THRESHOLD;
+  const thresholdBase = Number(thresholdOverride);
+  const whiteThreshold = clamp(
+    Number.isFinite(thresholdBase) ? Math.round(thresholdBase) : state.whiteThreshold,
+    WHITE_THRESHOLD_MIN,
+    WHITE_THRESHOLD_MAX,
+  );
   const tolerance = WHITE_ROW_TOLERANCE;
   const sampleX = Math.max(1, Math.floor(width / 600));
   const sampleY = Math.max(1, Math.floor(height / 600));
@@ -80,7 +130,19 @@ function detectAutoOffsets(image) {
     const r = data[index];
     const g = data[index + 1];
     const b = data[index + 2];
-    return r >= whiteThreshold && g >= whiteThreshold && b >= whiteThreshold;
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    if (luminance < whiteThreshold) {
+      return false;
+    }
+
+    const minChannel = Math.min(r, g, b);
+    if (minChannel >= whiteThreshold - 12) {
+      return true;
+    }
+
+    const maxChannel = Math.max(r, g, b);
+    return maxChannel >= whiteThreshold + 4 && minChannel >= whiteThreshold - 20;
   };
 
   const rowIsWhite = (y) => {
@@ -253,13 +315,24 @@ function setManualMode(item, manual) {
     slider.disabled = !manual;
   });
 
+  manualToggle.checked = manual;
   if (!manual) {
-    item.offsets = { ...item.autoOffsets };
+    if (state.applyFirstCrop) {
+      applyReferenceCrop();
+    } else {
+      item.offsets = { ...item.autoOffsets };
+      updateSliderUI(item);
+      updatePreview(item);
+    }
+    return;
   }
 
-  manualToggle.checked = manual;
   updateSliderUI(item);
   updatePreview(item);
+
+  if (state.applyFirstCrop && item.isManual && isReferenceItem(item)) {
+    applyReferenceCrop();
+  }
 }
 
 function applyOffsetChange(item, side, value) {
@@ -347,6 +420,10 @@ function removeImageItem(id) {
   const [item] = state.items.splice(index, 1);
   item.elements.card.remove();
   updateDownloadButtonState();
+
+  if (state.applyFirstCrop) {
+    applyReferenceCrop();
+  }
 }
 
 function updateDownloadButtonState() {
@@ -390,7 +467,14 @@ async function handleDownloadAll() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+      const href = link.href;
+      setTimeout(() => URL.revokeObjectURL(href), 2000);
+      if (DOWNLOAD_DELAY_MS > 0) {
+        // Небольшая пауза помогает браузеру обработать последовательные загрузки
+        // и избежать пропуска части файлов в больших партиях.
+        // eslint-disable-next-line no-await-in-loop
+        await delay(DOWNLOAD_DELAY_MS);
+      }
       index += 1;
     }
   } catch (error) {
@@ -454,6 +538,139 @@ function exportImage(item, maxDimension) {
   });
 }
 
+function sanitizeWhiteThreshold(rawValue) {
+  const numeric = typeof rawValue === 'number' ? rawValue : Number(rawValue);
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_WHITE_THRESHOLD;
+  }
+  const rounded = Math.round(numeric);
+  return clamp(rounded, WHITE_THRESHOLD_MIN, WHITE_THRESHOLD_MAX);
+}
+
+function recomputeAutoOffsets() {
+  if (!state.items.length) {
+    return;
+  }
+
+  state.items.forEach((item) => {
+    const autoOffsets = detectAutoOffsets(item.image, state.whiteThreshold);
+    item.autoOffsets = { ...autoOffsets };
+  });
+
+  if (state.applyFirstCrop) {
+    applyReferenceCrop();
+    return;
+  }
+
+  state.items.forEach((item) => {
+    if (!item.isManual) {
+      item.offsets = { ...item.autoOffsets };
+    }
+    updateSliderUI(item);
+    updatePreview(item);
+  });
+}
+
+function applyReferenceCrop() {
+  const reference = getReferenceItem();
+  if (!reference) {
+    return;
+  }
+
+  if (!reference.isManual) {
+    reference.offsets = { ...reference.autoOffsets };
+  }
+  const template = { ...reference.offsets };
+
+  state.items.forEach((item, index) => {
+    if (index === 0) {
+      updateSliderUI(reference);
+      updatePreview(reference);
+      return;
+    }
+
+    if (item.isManual) {
+      updateSliderUI(item);
+      updatePreview(item);
+      return;
+    }
+
+    const adaptedOffsets = adaptOffsetsToItem(template, item);
+    item.offsets = adaptedOffsets;
+    updateSliderUI(item);
+    updatePreview(item);
+  });
+}
+
+function adaptOffsetsToItem(templateOffsets, item) {
+  const { width, height } = item;
+  const safeTemplate = {
+    top: templateOffsets.top ?? 0,
+    bottom: templateOffsets.bottom ?? 0,
+    left: templateOffsets.left ?? 0,
+    right: templateOffsets.right ?? 0,
+  };
+
+  let top = clamp(Math.round(safeTemplate.top), 0, Math.max(0, height - MIN_CROP_PIXELS));
+  let bottom = clamp(Math.round(safeTemplate.bottom), 0, Math.max(0, height - MIN_CROP_PIXELS));
+  let left = clamp(Math.round(safeTemplate.left), 0, Math.max(0, width - MIN_CROP_PIXELS));
+  let right = clamp(Math.round(safeTemplate.right), 0, Math.max(0, width - MIN_CROP_PIXELS));
+
+  [top, bottom] = fitPairToLimit(top, bottom, Math.max(0, height - MIN_CROP_PIXELS));
+  [left, right] = fitPairToLimit(left, right, Math.max(0, width - MIN_CROP_PIXELS));
+
+  return { top, bottom, left, right };
+}
+
+function fitPairToLimit(first, second, limit) {
+  if (limit <= 0) {
+    return [0, 0];
+  }
+
+  let a = clamp(first, 0, limit);
+  let b = clamp(second, 0, limit);
+  let total = a + b;
+
+  if (total <= limit) {
+    return [a, b];
+  }
+
+  const overflow = total - limit;
+  if (overflow > 0) {
+    const reduceA = Math.round((overflow * (a || 0)) / (total || 1));
+    const reduceB = overflow - reduceA;
+    a = clamp(a - reduceA, 0, limit);
+    b = clamp(b - reduceB, 0, limit);
+    total = a + b;
+    if (total > limit) {
+      const extra = total - limit;
+      if (b >= extra) {
+        b = clamp(b - extra, 0, limit);
+      } else {
+        a = clamp(a - (extra - b), 0, limit);
+        b = 0;
+      }
+    }
+  }
+
+  return [a, b];
+}
+
+function getReferenceItem() {
+  return state.items[0] || null;
+}
+
+function isReferenceItem(item) {
+  const reference = getReferenceItem();
+  return Boolean(reference && reference.id === item.id);
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }

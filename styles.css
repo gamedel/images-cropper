@@ -6,6 +6,8 @@
   --accent-dark: #1f6bdb;
   --border-color: rgba(0, 0, 0, 0.1);
   --bg-muted: rgba(63, 140, 255, 0.08);
+  --preview-border: rgba(0, 0, 0, 0.85);
+  --preview-bg: #fff;
 }
 
 * {
@@ -29,6 +31,11 @@ body {
   .controls {
     background: rgba(22, 25, 35, 0.75);
     border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  :root {
+    --preview-border: rgba(255, 255, 255, 0.85);
+    --preview-bg: rgba(10, 14, 22, 0.85);
   }
 }
 
@@ -86,6 +93,28 @@ body {
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.95rem;
+}
+
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin: 0;
+}
+
+.control-hint {
+  font-size: 0.75rem;
+  color: rgba(28, 28, 28, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  .control-hint {
+    color: rgba(241, 243, 249, 0.55);
+  }
 }
 
 input[type="file"] {
@@ -186,8 +215,9 @@ button:not(:disabled):focus-visible {
 
 .preview {
   width: 100%;
-  border-radius: 12px;
-  background: var(--bg-muted);
+  border-radius: 0;
+  background: var(--preview-bg);
+  border: 2px solid var(--preview-border);
   display: block;
 }
 

@@ -24,7 +24,7 @@
       <div class="control-row">
         <label>
           Максимальная сторона (px)
-          <input id="maxDimension" type="number" min="50" max="4000" value="500" />
+          <input id="maxDimension" type="number" min="50" max="4000" value="700" />
         </label>
         <label>
           Имя файлов
@@ -33,6 +33,18 @@
         <label>
           Номер для начала
           <input id="startIndex" type="number" min="0" value="1" />
+        </label>
+      </div>
+
+      <div class="control-row">
+        <label>
+          Порог белого (0-255)
+          <input id="whiteThreshold" type="number" min="200" max="254" value="252" step="1" />
+          <span class="control-hint">Регулируйте, чтобы сильнее или слабее обрезать светлый фон.</span>
+        </label>
+        <label class="checkbox-label">
+          <input id="matchFirstCrop" type="checkbox" />
+          Обрезать по первому изображению
         </label>
       </div>
 
